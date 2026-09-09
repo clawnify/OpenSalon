@@ -1,5 +1,6 @@
 import { createApp, createRoute, z } from "@clawnify/app";
 import { query, get, run } from "./db.js";
+import { ensureSeeded } from "./seed.js";
 
 type Env = { Bindings: { DB: D1Database } };
 
@@ -7,6 +8,14 @@ const app = createApp<Env>({
   title: "OpenSalon",
   version: "1.0.0",
   description: "Appointment scheduling and business management for salons, spas, and other appointment-based businesses.",
+});
+
+// Seed sample data + the appointment counter rows on the first request an
+// isolate serves. Registered after createApp's `initDB` middleware and before
+// every route, so handlers always see the _meta rows.
+app.use("*", async (_c, next) => {
+  await ensureSeeded();
+  await next();
 });
 
 // ── Shared Schemas ─────────────────────────────────────────────────
@@ -121,7 +130,12 @@ async function nextIdentifier(): Promise<string> {
   const prefix = await get<{ value: string }>("SELECT value FROM _meta WHERE key = 'appointment_prefix'");
   const counter = await get<{ value: string }>("SELECT value FROM _meta WHERE key = 'appointment_counter'");
   const next = parseInt(counter?.value || "0", 10) + 1;
-  await run("UPDATE _meta SET value = ? WHERE key = 'appointment_counter'", [String(next)]);
+  // Upsert, not UPDATE: a plain UPDATE matches zero rows if the counter row is
+  // missing, which would hand out the same identifier forever.
+  await run(
+    "INSERT INTO _meta (key, value) VALUES ('appointment_counter', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    [String(next)],
+  );
   return `${prefix?.value || "APT"}-${next}`;
 }
 
