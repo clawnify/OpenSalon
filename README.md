@@ -37,6 +37,7 @@ OpenSalon is **vertical-agnostic** — configure services, pricing, and staff fo
 
 - **Day calendar view** — visual schedule with staff columns, colored appointment blocks, and day navigation (like Salonist/Square)
 - **Appointment booking** — create bookings with client, staff, date/time, and multiple services; auto-calculates duration and total price
+- **Rescheduling** — move an existing booking to a new date or time from its details, keeping its duration, services and history; staff conflicts require an explicit override
 - **Blocked time slots** — mark breaks, lunch hours, or days off per staff member directly on the calendar
 - **Client management** — full database with contact info, notes, preferences, and appointment history
 - **Staff management** — team directory with color coding, titles/roles, activate/deactivate, and appointment counts

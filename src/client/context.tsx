@@ -29,7 +29,7 @@ export interface AppContextValue {
     service_ids?: number[];
     allow_conflict?: boolean;
   }) => Promise<void>;
-  updateAppointment: (id: number, data: Partial<Appointment>) => Promise<void>;
+  updateAppointment: (id: number, data: Partial<Appointment> & { allow_conflict?: boolean }) => Promise<void>;
   deleteAppointment: (id: number) => Promise<void>;
 
   // Appointment detail
