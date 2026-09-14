@@ -100,42 +100,9 @@ CREATE TABLE IF NOT EXISTS _meta (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO _meta (key, value) VALUES ('appointment_counter', '0');
-INSERT OR IGNORE INTO _meta (key, value) VALUES ('appointment_prefix', 'APT');
-
--- Example staff
-INSERT OR IGNORE INTO staff (id, name, email, title, color)
-VALUES
-  (1, 'Alex', 'alex@example.com', 'Senior Stylist', '#3b82f6'),
-  (2, 'Jordan', 'jordan@example.com', 'Therapist', '#10b981'),
-  (3, 'Sam', 'sam@example.com', 'Specialist', '#f59e0b'),
-  (4, 'Taylor', 'taylor@example.com', 'Junior Stylist', '#8b5cf6');
-
--- Example services (generic so they work across verticals)
-INSERT OR IGNORE INTO services (id, name, description, duration, price, color, category)
-VALUES
-  (1, 'Standard Session', 'Standard appointment', 60, 50, '#3b82f6', 'General'),
-  (2, 'Quick Service', 'Short appointment', 30, 30, '#10b981', 'General'),
-  (3, 'Premium Session', 'Extended premium service', 90, 85, '#8b5cf6', 'Premium'),
-  (4, 'Express Touch-up', 'Quick 15-minute service', 15, 20, '#f59e0b', 'Express'),
-  (5, 'Consultation', 'Initial consultation', 30, 0, '#6b7280', 'General'),
-  (6, 'Package Deal', 'Multiple services bundled', 120, 120, '#ec4899', 'Premium');
-
--- Example clients
-INSERT OR IGNORE INTO clients (id, name, email, phone)
-VALUES
-  (1, 'Jamie Rivera', 'jamie@example.com', '555-0101'),
-  (2, 'Casey Morgan', 'casey@example.com', '555-0102'),
-  (3, 'Riley Chen', 'riley@example.com', '555-0103'),
-  (4, 'Dakota Smith', 'dakota@example.com', '555-0104');
-
--- Example products
-INSERT OR IGNORE INTO products (id, name, brand, category, price, cost, stock)
-VALUES
-  (1, 'Professional Shampoo', 'ProCare', 'Hair Care', 24.99, 12.00, 25),
-  (2, 'Styling Gel', 'ProCare', 'Styling', 15.99, 7.50, 40),
-  (3, 'Moisturizing Cream', 'SkinLux', 'Skin Care', 32.99, 16.00, 18),
-  (4, 'Essential Oil Set', 'AromaPlus', 'Wellness', 45.99, 22.00, 12);
+-- Seed rows (the _meta counter rows and the example staff / services /
+-- clients / products) moved into the app: see src/server/seed.ts. Clawnify
+-- applies this file as DDL only, so any INSERT here fails the whole deploy.
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_appointments_client ON appointments(client_id);
