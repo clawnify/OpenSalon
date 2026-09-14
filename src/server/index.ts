@@ -426,6 +426,7 @@ const createAppointment = createRoute({
   },
   responses: {
     201: { description: "Created", content: { "application/json": { schema: z.object({ appointment: AppointmentSchema }) } } },
+    400: { description: "Invalid times", content: { "application/json": { schema: ErrorSchema } } },
     409: { description: "Staff member is already busy", content: { "application/json": { schema: ConflictSchema } } },
   },
 });
@@ -433,7 +434,7 @@ const createAppointment = createRoute({
 app.openapi(createAppointment, async (c) => {
   const body = c.req.valid("json");
   const identifier = await nextIdentifier();
-  const startTime = body.start_time || "09:00";
+  const startTime = body.start_time ?? "09:00";
 
   // Calculate total duration and price from services
   let totalDuration = 60;
@@ -449,6 +450,12 @@ app.openapi(createAppointment, async (c) => {
     totalPrice = svcs.reduce((sum, s) => sum + s.price, 0);
   }
 
+  const start = toMinutes(startTime);
+  if (start === null) return c.json({ error: "Times must be HH:MM" }, 400);
+  if (totalDuration <= 0) return c.json({ error: "The appointment must have a positive duration" }, 400);
+  if (start + totalDuration >= 24 * 60) {
+    return c.json({ error: "Appointments must start and end on the same day" }, 400);
+  }
   const endTime = addMinutes(startTime, totalDuration);
 
   // Nothing to contend for when the booking is unassigned.
@@ -526,8 +533,8 @@ app.openapi(updateAppointment, async (c) => {
   const { allow_conflict, ...body } = c.req.valid("json");
 
   const existing = await get<{
-    staff_id: number | null; scheduled_date: string; start_time: string; end_time: string;
-  }>("SELECT staff_id, scheduled_date, start_time, end_time FROM appointments WHERE id = ?", [id]);
+    staff_id: number | null; scheduled_date: string; start_time: string; end_time: string; status: string;
+  }>("SELECT staff_id, scheduled_date, start_time, end_time, status FROM appointments WHERE id = ?", [id]);
   if (!existing) return c.json({ error: "Not found" }, 404);
 
   // Where the appointment lands once this patch is applied.
@@ -537,29 +544,39 @@ app.openapi(updateAppointment, async (c) => {
 
   // Moving an appointment keeps its length. Without this, patching start_time
   // alone left the old end_time behind and silently resized the booking.
-  let endTime = body.end_time;
-  if (endTime === undefined) {
+  let endTime = body.end_time ?? existing.end_time;
+  if (body.start_time !== undefined && body.start_time !== existing.start_time && body.end_time === undefined) {
     const was = toMinutes(existing.start_time);
     const wasEnd = toMinutes(existing.end_time);
     const duration = was !== null && wasEnd !== null ? Math.max(wasEnd - was, 0) : 0;
     endTime = addMinutes(startTime, duration);
+    body.end_time = endTime;
   }
 
-  const start = toMinutes(startTime);
-  const end = toMinutes(endTime);
-  if (start === null || end === null) return c.json({ error: "Times must be HH:MM" }, 400);
-  if (end <= start) return c.json({ error: "The appointment must end after it starts" }, 400);
+  const moved = staffId !== existing.staff_id || date !== existing.scheduled_date
+    || startTime !== existing.start_time || endTime !== existing.end_time;
+  const status = body.status ?? existing.status;
+  const restored = existing.status === "cancelled" && status !== "cancelled";
 
-  if (staffId && !allow_conflict) {
-    const conflicts = findConflicts(startTime, endTime, await busyFor(staffId, date, Number(id)));
-    if (conflicts.length > 0) {
-      return c.json({ error: describeConflicts(await staffName(staffId), conflicts), conflicts }, 409);
+  // An existing deliberate overlap must not block notes, check-in, completion,
+  // or cancellation. Restoring a cancelled booking occupies its slot again.
+  if (moved || restored) {
+    const start = toMinutes(startTime);
+    const end = toMinutes(endTime);
+    if (start === null || end === null) return c.json({ error: "Times must be HH:MM" }, 400);
+    if (end <= start) return c.json({ error: "The appointment must end after it starts on the same day" }, 400);
+
+    if (status !== "cancelled" && staffId && !allow_conflict) {
+      const conflicts = findConflicts(startTime, endTime, await busyFor(staffId, date, Number(id)));
+      if (conflicts.length > 0) {
+        return c.json({ error: describeConflicts(await staffName(staffId), conflicts), conflicts }, 409);
+      }
     }
   }
 
   const sets: string[] = [];
   const params: unknown[] = [];
-  for (const [key, val] of Object.entries({ ...body, start_time: startTime, end_time: endTime })) {
+  for (const [key, val] of Object.entries(body)) {
     if (val !== undefined) { sets.push(`${key} = ?`); params.push(val); }
   }
   sets.push("updated_at = datetime('now')");

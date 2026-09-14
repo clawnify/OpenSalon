@@ -24,7 +24,7 @@ export type Busy = {
 
 /** `"09:30"` -> `570`. Returns `null` for anything unparseable. */
 export function toMinutes(time: string): number | null {
-  const m = /^(\d{1,2}):(\d{2})/.exec(time ?? "");
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time ?? "");
   if (!m) return null;
   const h = Number(m[1]);
   const min = Number(m[2]);

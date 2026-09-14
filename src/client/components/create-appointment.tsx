@@ -27,6 +27,7 @@ export function CreateAppointment({ onClose, defaultDate }: Props) {
   const [conflicts, setConflicts] = useState<Conflict[] | null>(null);
 
   const toggleService = (id: number) => {
+    setConflicts(null);
     setSelectedServices((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
@@ -68,7 +69,7 @@ export function CreateAppointment({ onClose, defaultDate }: Props) {
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Booking</DialogTitle>
         </DialogHeader>

@@ -15,6 +15,8 @@ test("toMinutes reads wall clock, and rejects nonsense", () => {
   assert.equal(toMinutes("24:00"), null);
   assert.equal(toMinutes("10:75"), null);
   assert.equal(toMinutes("half ten"), null);
+  assert.equal(toMinutes("09:30garbage"), null);
+  assert.equal(toMinutes("09:30:99"), null);
   assert.equal(toMinutes(""), null);
 });
 
