@@ -53,9 +53,9 @@ export function App() {
 
   return (
     <AppContext.Provider value={appState}>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
         <Sidebar currentView={view} />
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="min-h-0 min-w-0 flex-1 overflow-auto bg-background">
           {appState.loading ? (
             <div className="flex h-full items-center justify-center text-muted-foreground">Loading...</div>
           ) : (
