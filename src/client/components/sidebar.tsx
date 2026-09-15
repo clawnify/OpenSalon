@@ -1,5 +1,8 @@
+import { useEffect, useState } from "preact/hooks";
 import { useApp } from "../context";
-import { Scissors, LayoutDashboard, CalendarDays, Clock, Users, UserCog, Sparkles, Package } from "lucide-preact";
+import { Scissors, Menu, LayoutDashboard, CalendarDays, Clock, Users, UserCog, Sparkles, Package } from "lucide-preact";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -15,11 +18,11 @@ const navItems: { view: View; path: string; label: string; icon: typeof LayoutDa
   { view: "products", path: "/products", label: "Products", icon: Package },
 ];
 
-export function Sidebar({ currentView }: { currentView: View }) {
+function SidebarContent({ currentView, onNavigate }: { currentView: View; onNavigate?: () => void }) {
   const { navigate, stats } = useApp();
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
+    <div className="flex h-full min-h-0 flex-col bg-sidebar">
       <div className="flex items-center gap-2 px-4 py-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Scissors className="h-4 w-4" />
@@ -27,18 +30,19 @@ export function Sidebar({ currentView }: { currentView: View }) {
         <span className="text-base font-semibold text-sidebar-foreground">Salon Manager</span>
       </div>
       <Separator />
-      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
+      <nav aria-label="Main navigation" className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 py-3">
         <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Menu</p>
         {navItems.map((item) => (
           <button
             key={item.view}
             className={cn(
-              "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-0",
               currentView === item.view
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
             )}
-            onClick={() => navigate(item.path)}
+            aria-current={currentView === item.view ? "page" : undefined}
+            onClick={() => { navigate(item.path); onNavigate?.(); }}
           >
             <item.icon className="h-4 w-4" />
             <span className="flex-1 text-left">{item.label}</span>
@@ -65,6 +69,48 @@ export function Sidebar({ currentView }: { currentView: View }) {
           <div className="text-xs text-muted-foreground">Upcoming</div>
         </div>
       </div>
-    </aside>
+    </div>
+  );
+}
+
+export function Sidebar({ currentView }: { currentView: View }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const closeOnDesktop = () => { if (desktop.matches) setOpen(false); };
+    const closeOnHistory = () => setOpen(false);
+    desktop.addEventListener("change", closeOnDesktop);
+    window.addEventListener("popstate", closeOnHistory);
+    return () => {
+      desktop.removeEventListener("change", closeOnDesktop);
+      window.removeEventListener("popstate", closeOnHistory);
+    };
+  }, []);
+
+  return (
+    <>
+      <aside className="hidden w-60 shrink-0 border-r md:block">
+        <SidebarContent currentView={currentView} />
+      </aside>
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-sidebar px-4 py-2 md:hidden">
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <Scissors className="h-4 w-4 text-primary" />
+          Salon Manager
+        </span>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="min-h-11" aria-label="Open navigation menu">
+              <Menu className="h-4 w-4" />
+              Menu
+            </Button>
+          </DialogTrigger>
+          <DialogContent aria-describedby={undefined} className="left-0 top-0 flex h-dvh w-80 max-w-[calc(100%-2rem)] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:rounded-none [&>button]:flex [&>button]:h-11 [&>button]:w-11 [&>button]:items-center [&>button]:justify-center [&>button]:right-2 [&>button]:top-3">
+            <DialogTitle className="sr-only">Navigation menu</DialogTitle>
+            <SidebarContent currentView={currentView} onNavigate={() => setOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      </header>
+    </>
   );
 }
