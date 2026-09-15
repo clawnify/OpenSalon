@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "./status-badge";
+import { RescheduleAppointment } from "./reschedule-appointment";
 import { conflictsFrom, conflictSentence } from "@/lib/conflicts";
 
 export function AppointmentDetail() {
@@ -15,6 +16,7 @@ export function AppointmentDetail() {
     addAppointmentNote, deleteAppointmentNote, staffLookup, setError,
   } = useApp();
   const [noteText, setNoteText] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
 
   if (!apt) return null;
 
@@ -63,6 +65,7 @@ export function AppointmentDetail() {
                 <div className="space-y-1">
                   <Label className="flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3 w-3" /> Date & Time</Label>
                   <p className="text-sm font-medium">{apt.scheduled_date} at {apt.start_time} - {apt.end_time}</p>
+                  <Button variant="outline" size="sm" className="px-2" onClick={() => setRescheduling(true)}>Reschedule</Button>
                 </div>
                 <div className="space-y-1">
                   <Label className="flex items-center gap-1.5 text-xs text-muted-foreground"><User className="h-3 w-3" /> Client</Label>
@@ -168,6 +171,7 @@ export function AppointmentDetail() {
           </Card>
         </div>
       </div>
+      {rescheduling && <RescheduleAppointment key={apt.id} appointment={apt} onClose={() => setRescheduling(false)} />}
     </div>
   );
 }

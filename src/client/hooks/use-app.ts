@@ -156,7 +156,7 @@ export function useAppState(isAgent: boolean, navigate: (to: string) => void): A
     await Promise.all([fetchStats(), fetchCalendar(calendarDate)]);
   }, [appointmentsPag, appointmentsSearch, appointmentsStatusFilter, calendarDate, fetchAppointments, fetchStats, fetchCalendar]);
 
-  const updateAppointment = useCallback(async (id: number, data: Partial<Appointment>) => {
+  const updateAppointment = useCallback(async (id: number, data: Partial<Appointment> & { allow_conflict?: boolean }) => {
     await api("PUT", `/api/appointments/${id}`, data);
     await fetchAppointments(appointmentsPag, appointmentsSearch, appointmentsStatusFilter);
     if (selectedAppointment && selectedAppointment.id === id) {

@@ -107,6 +107,32 @@ test("blocked time rejects new and moved appointments", async (t) => {
   assert.equal((await update(first.body.appointment.id, { start_time: "13:00" })).status, 409);
 });
 
+test("rescheduling across dates keeps booking history and moves the calendar entry", async (t) => {
+  const { create, update, call, db } = await setup(t);
+  const created = await create({ service_ids: [1, 2], notes: "Keep the colour formula" });
+  const id = created.body.appointment.id;
+  await call("POST", `/api/appointments/${id}/notes`, { content: "Client asked to move" });
+  const before = (await call("GET", `/api/appointments/${id}`)).body.appointment;
+  const target = { scheduled_date: "2026-09-15", start_time: "14:00" };
+  await create({ client_id: 2, ...target });
+
+  assert.equal((await update(id, target)).status, 409);
+  assert.deepEqual((await call("GET", `/api/appointments/${id}`)).body.appointment, before);
+  assert.equal((await update(id, { ...target, allow_conflict: true })).status, 200);
+  const after = (await call("GET", `/api/appointments/${id}`)).body.appointment;
+  assert.equal(after.scheduled_date, target.scheduled_date);
+  assert.equal(after.start_time, "14:00");
+  assert.equal(after.end_time, "15:30");
+  for (const field of ["id", "identifier", "client_id", "staff_id", "status", "total_price", "notes", "appointment_services", "appointment_notes", "created_at"]) {
+    assert.deepEqual(after[field], before[field], field);
+  }
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM appointments").get()?.count, 2);
+  const oldDay = await call("GET", "/api/calendar?start=2026-09-14&end=2026-09-14");
+  const newDay = await call("GET", "/api/calendar?start=2026-09-15&end=2026-09-15");
+  assert.equal(oldDay.body.appointments.some((a: { id: number }) => a.id === id), false);
+  assert.equal(newDay.body.appointments.find((a: { id: number }) => a.id === id).end_time, "15:30");
+});
+
 test("invalid times and midnight overflow cannot bypass the guard, even with an override", async (t) => {
   const { create, update, db } = await setup(t);
   for (const start_time of ["", "noon", "09:30garbage", "24:00", "23:30"]) {
