@@ -93,59 +93,63 @@ export function CalendarView() {
   };
 
   return (
-    <div className="flex h-full flex-col space-y-4 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setCalendarDate(todayStr)}>Today</Button>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shiftDay(-1)}>
+    <div className="flex h-full min-w-0 flex-col gap-4 p-4 sm:p-6">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex w-full items-center justify-between gap-3 sm:w-auto">
+          <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
+          <Button variant="outline" size="sm" className="h-11" onClick={() => setCalendarDate(todayStr)}>Today</Button>
+        </div>
+        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
+          <Button variant="outline" size="icon" className="h-11 w-11 shrink-0" aria-label="Previous day" onClick={() => shiftDay(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="min-w-[200px] text-center text-sm font-semibold">
+          <span className="min-w-0 flex-1 text-center text-sm font-semibold sm:min-w-[200px]" aria-live="polite" aria-atomic="true">
             {dateObj.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
           </span>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shiftDay(1)}>
+          <Button variant="outline" size="icon" className="h-11 w-11 shrink-0" aria-label="Next day" onClick={() => shiftDay(1)}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowBlockForm(!showBlockForm)}>
-            <Ban className="mr-1 h-3.5 w-3.5" /> Block Time
+        </div>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Button variant="outline" size="sm" className="h-11 flex-1 sm:flex-none" aria-expanded={showBlockForm} aria-controls="calendar-block-time" onClick={() => setShowBlockForm(!showBlockForm)}>
+            <Ban className="h-3.5 w-3.5" /> Block Time
           </Button>
-          <Button size="sm" onClick={() => setShowCreate(true)}>
-            <Plus className="mr-1 h-3.5 w-3.5" /> New Booking
+          <Button size="sm" className="h-11 flex-1 sm:flex-none" onClick={() => setShowCreate(true)}>
+            <Plus className="h-3.5 w-3.5" /> New Booking
           </Button>
         </div>
       </div>
 
       {showBlockForm && (
-        <Card>
-          <CardContent className="flex items-end gap-3 p-4">
-            <div className="space-y-1">
-              <Label className="text-xs">Staff</Label>
-              <select className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={blockStaff} onChange={(e) => setBlockStaff((e.target as HTMLSelectElement).value)}>
+        <Card id="calendar-block-time" className="shrink-0">
+          <CardContent className="grid grid-cols-2 items-end gap-3 p-4 sm:grid-cols-4 xl:flex xl:flex-wrap">
+            <div className="col-span-2 min-w-0 space-y-1 xl:w-48">
+              <Label htmlFor="block-staff" className="text-xs">Staff</Label>
+              <select id="block-staff" className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" value={blockStaff} onChange={(e) => setBlockStaff((e.target as HTMLSelectElement).value)}>
                 <option value="">Select staff...</option>
                 {staffLookup.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Start</Label>
-              <Input type="time" className="h-9 w-28" value={blockStart} onChange={(e) => setBlockStart((e.target as HTMLInputElement).value)} />
+            <div className="min-w-0 space-y-1 xl:w-28">
+              <Label htmlFor="block-start" className="text-xs">Start</Label>
+              <Input id="block-start" type="time" className="h-11 w-full min-w-0" value={blockStart} onChange={(e) => setBlockStart((e.target as HTMLInputElement).value)} />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">End</Label>
-              <Input type="time" className="h-9 w-28" value={blockEnd} onChange={(e) => setBlockEnd((e.target as HTMLInputElement).value)} />
+            <div className="min-w-0 space-y-1 xl:w-28">
+              <Label htmlFor="block-end" className="text-xs">End</Label>
+              <Input id="block-end" type="time" className="h-11 w-full min-w-0" value={blockEnd} onChange={(e) => setBlockEnd((e.target as HTMLInputElement).value)} />
             </div>
-            <div className="flex-1 space-y-1">
-              <Label className="text-xs">Reason</Label>
-              <Input className="h-9" placeholder="e.g. Lunch break" value={blockReason} onChange={(e) => setBlockReason((e.target as HTMLInputElement).value)} />
+            <div className="col-span-2 min-w-0 space-y-1 xl:flex-1">
+              <Label htmlFor="block-reason" className="text-xs">Reason</Label>
+              <Input id="block-reason" className="h-11" placeholder="e.g. Lunch break" value={blockReason} onChange={(e) => setBlockReason((e.target as HTMLInputElement).value)} />
             </div>
-            <Button size="sm" onClick={handleAddBlock}>Add Block</Button>
+            <Button size="sm" className="col-span-2 h-11" onClick={handleAddBlock}>Add Block</Button>
           </CardContent>
         </Card>
       )}
 
       {showCreate && <CreateAppointment onClose={() => setShowCreate(false)} defaultDate={calendarDate} />}
 
-      <div className="flex flex-1 overflow-x-auto rounded-lg border bg-card">
+      <div className="flex min-h-80 min-w-0 flex-1 overflow-auto rounded-lg border bg-card" role="region" aria-label="Daily staff schedule" tabIndex={0}>
         {/* Time gutter */}
         <div className="w-16 flex-shrink-0 border-r bg-muted/30 pt-10">
           {HOURS.map((h) => (
