@@ -91,8 +91,8 @@ export function Sidebar({ currentView }: { currentView: View }) {
   }, []);
 
   if (embedded) {
-    const icons = ["home", "calendar-days", "clock", "users", "user-cog", "sparkles", "package"];
-    return <AppNav title="Salon" icon="scissors" active={currentView}
+    const icons = ["home", "calendar-days", "clock", "users", "users", "sparkles", "package"];
+    return <AppNav title="Salon" icon="calendar-days" active={currentView}
       groups={[{ items: navItems.map((item, index) => ({
         id: item.view, label: item.label, href: item.path, icon: icons[index],
         home: item.view === "dashboard",
