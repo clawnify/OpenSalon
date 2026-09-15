@@ -1,3 +1,4 @@
+import { AppNav, embedded } from "@clawnify/app/client";
 import { useEffect, useState } from "preact/hooks";
 import { useApp } from "../context";
 import { Scissors, Menu, LayoutDashboard, CalendarDays, Clock, Users, UserCog, Sparkles, Package } from "lucide-preact";
@@ -75,6 +76,7 @@ function SidebarContent({ currentView, onNavigate }: { currentView: View; onNavi
 
 export function Sidebar({ currentView }: { currentView: View }) {
   const [open, setOpen] = useState(false);
+  const { navigate, stats } = useApp();
 
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 768px)");
@@ -87,6 +89,19 @@ export function Sidebar({ currentView }: { currentView: View }) {
       window.removeEventListener("popstate", closeOnHistory);
     };
   }, []);
+
+  if (embedded) {
+    const icons = ["home", "calendar-days", "clock", "users", "user-cog", "sparkles", "package"];
+    return <AppNav title="Salon" icon="scissors" active={currentView}
+      groups={[{ items: navItems.map((item, index) => ({
+        id: item.view, label: item.label, href: item.path, icon: icons[index],
+        home: item.view === "dashboard",
+        count: item.view === "appointments" ? stats.appointments || undefined
+          : item.view === "clients" ? stats.clients || undefined
+          : item.view === "products" ? stats.low_stock_products || undefined : undefined,
+      })) }]}
+      onNavigate={(item) => navigate(item.href || "/")} />;
+  }
 
   return (
     <>
