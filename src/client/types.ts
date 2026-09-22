@@ -19,6 +19,8 @@ export interface Appointment {
   client_phone?: string;
   staff_name?: string | null;
   staff_color?: string | null;
+  service_names?: string | null;
+  latest_note?: string | null;
   appointment_services?: AppointmentService[];
   appointment_notes?: AppointmentNote[];
   created_at: string;

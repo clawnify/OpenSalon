@@ -102,6 +102,8 @@ const AppointmentSchema = z.object({
   client_phone: z.string().optional(),
   staff_name: z.string().nullable().optional(),
   staff_color: z.string().nullable().optional(),
+  service_names: z.string().nullable().optional(),
+  latest_note: z.string().nullable().optional(),
   appointment_services: z.array(AppointmentServiceSchema).optional(),
   appointment_notes: z.array(AppointmentNoteSchema).optional(),
   created_at: z.string(),
@@ -707,7 +709,20 @@ app.openapi(getClient, async (c) => {
   const client = await get<Record<string, unknown>>("SELECT * FROM clients WHERE id = ?", [id]);
   if (!client) return c.json({ error: "Not found" }, 404);
   const appointments = await query<Record<string, unknown>>(
-    `SELECT a.*, s.name as staff_name, s.color as staff_color
+    `SELECT a.*, s.name as staff_name, s.color as staff_color,
+            (SELECT GROUP_CONCAT(name, ', ')
+             FROM (
+               SELECT sv.name
+               FROM appointment_services aps
+               JOIN services sv ON sv.id = aps.service_id
+               WHERE aps.appointment_id = a.id
+               ORDER BY aps.id
+             )) as service_names,
+            (SELECT an.content
+             FROM appointment_notes an
+             WHERE an.appointment_id = a.id
+             ORDER BY an.created_at DESC, an.id DESC
+             LIMIT 1) as latest_note
      FROM appointments a LEFT JOIN staff s ON s.id = a.staff_id
      WHERE a.client_id = ? ORDER BY a.scheduled_date DESC LIMIT 50`,
     [id],
