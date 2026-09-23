@@ -133,6 +133,24 @@ test("rescheduling across dates keeps booking history and moves the calendar ent
   assert.equal(newDay.body.appointments.find((a: { id: number }) => a.id === id).end_time, "15:30");
 });
 
+test("client history summarizes services and the latest service note", async (t) => {
+  const { create, call } = await setup(t);
+  const created = await create({ service_ids: [1, 2] });
+  const id = created.body.appointment.id;
+  assert.equal((await call("POST", `/api/appointments/${id}/notes`, { content: "First formula" })).status, 201);
+  assert.equal((await call("POST", `/api/appointments/${id}/notes`, { content: "Latest formula" })).status, 201);
+  const blank = await create({ service_ids: [], start_time: "12:00" });
+
+  const history = await call("GET", "/api/clients/1");
+  assert.equal(history.status, 200);
+  const visit = history.body.appointments.find((appointment: { id: number }) => appointment.id === id);
+  assert.equal(visit.service_names, "Standard Session, Quick Service");
+  assert.equal(visit.latest_note, "Latest formula");
+  const blankVisit = history.body.appointments.find((appointment: { id: number }) => appointment.id === blank.body.appointment.id);
+  assert.equal(blankVisit.service_names, null);
+  assert.equal(blankVisit.latest_note, null);
+});
+
 test("invalid times and midnight overflow cannot bypass the guard, even with an override", async (t) => {
   const { create, update, db } = await setup(t);
   for (const start_time of ["", "noon", "09:30garbage", "24:00", "23:30"]) {
