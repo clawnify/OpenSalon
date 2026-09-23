@@ -43,5 +43,5 @@ Read `/llms.txt` for the current route list and `/api/openapi.json` for exact re
 - `400` means the supplied time or duration is invalid. Appointments must use `HH:MM`, end after they start, and stay within one day.
 - `404` means the record no longer exists. Search again instead of reusing a stale ID.
 - Treat client contact details and notes as private. Return only what the user needs for the current task.
-- Destructive calls are free but irreversible; confirm the intended record and prefer deactivation or cancellation where the API supports it.
+- Destructive API calls do not ask for confirmation and are irreversible; confirm the intended record and prefer deactivation or cancellation where the API supports it.
 - Deleting a client also deletes that client's appointments, service links, and appointment notes. Never call `DELETE /api/clients/{id}` without explicit confirmation of that full consequence.
