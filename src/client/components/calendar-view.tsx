@@ -59,7 +59,7 @@ function formatHour(h: number): string {
 export function CalendarView() {
   const {
     calendarAppointments, calendarBlocked, calendarDate, setCalendarDate,
-    staffLookup, navigate, deleteBlockedSlot, addBlockedSlot, isAgent,
+    staffLookup, navigate, deleteBlockedSlot, addBlockedSlot, isAgent, setError,
   } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showBlockForm, setShowBlockForm] = useState(false);
@@ -81,15 +81,20 @@ export function CalendarView() {
 
   const handleAddBlock = async () => {
     if (!blockStaff) return;
-    await addBlockedSlot({
-      staff_id: parseInt(blockStaff),
-      blocked_date: calendarDate,
-      start_time: blockStart,
-      end_time: blockEnd,
-      reason: blockReason,
-    });
-    setShowBlockForm(false);
-    setBlockReason("");
+    try {
+      await addBlockedSlot({
+        staff_id: parseInt(blockStaff),
+        blocked_date: calendarDate,
+        start_time: blockStart,
+        end_time: blockEnd,
+        reason: blockReason,
+      });
+      setError(null);
+      setShowBlockForm(false);
+      setBlockReason("");
+    } catch (err) {
+      setError((err as Error).message);
+    }
   };
 
   return (

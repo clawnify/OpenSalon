@@ -107,6 +107,23 @@ test("blocked time rejects new and moved appointments", async (t) => {
   assert.equal((await update(first.body.appointment.id, { start_time: "13:00" })).status, 409);
 });
 
+test("blocked time must be a valid forward interval", async (t) => {
+  const { call, db } = await setup(t);
+  const block = (start_time: string, end_time: string) => call("POST", "/api/blocked-slots", {
+    staff_id: 1, blocked_date: "2026-09-14", start_time, end_time, reason: "Unavailable",
+  });
+
+  assert.equal((await block("12:00", "13:00")).status, 201);
+  assert.equal((await block("13:00", "14:00")).status, 201, "adjacent blocks remain valid");
+  for (const [start, end] of [["13:00", "12:00"], ["12:00", "12:00"], ["noon", "13:00"]]) {
+    assert.equal((await block(start, end)).status, 400, `${start}-${end}`);
+  }
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM blocked_slots").get()?.count, 2);
+
+  const schema = await call("GET", "/api/openapi.json");
+  assert.ok(schema.body.paths["/api/blocked-slots"].post.responses[400]);
+});
+
 test("rescheduling across dates keeps booking history and moves the calendar entry", async (t) => {
   const { create, update, call, db } = await setup(t);
   const created = await create({ service_ids: [1, 2], notes: "Keep the colour formula" });

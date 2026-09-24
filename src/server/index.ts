@@ -1006,11 +1006,19 @@ const createBlockedSlot = createRoute({
       reason: z.string().optional(),
     }) } } },
   },
-  responses: { 201: { description: "Created", content: { "application/json": { schema: OkSchema } } } },
+  responses: {
+    201: { description: "Created", content: { "application/json": { schema: OkSchema } } },
+    400: { description: "Invalid times", content: { "application/json": { schema: ErrorSchema } } },
+  },
 });
 
 app.openapi(createBlockedSlot, async (c) => {
   const body = c.req.valid("json");
+  const start = toMinutes(body.start_time);
+  const end = toMinutes(body.end_time);
+  if (start === null || end === null) return c.json({ error: "Times must be HH:MM" }, 400);
+  if (end <= start) return c.json({ error: "Blocked time must end after it starts on the same day" }, 400);
+
   await run(
     "INSERT INTO blocked_slots (staff_id, blocked_date, start_time, end_time, reason) VALUES (?, ?, ?, ?, ?)",
     [body.staff_id, body.blocked_date, body.start_time, body.end_time, body.reason || ""],
