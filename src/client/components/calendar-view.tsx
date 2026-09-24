@@ -89,6 +89,7 @@ export function CalendarView() {
         end_time: blockEnd,
         reason: blockReason,
       });
+      setError(null);
       setShowBlockForm(false);
       setBlockReason("");
     } catch (err) {
