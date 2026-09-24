@@ -13,11 +13,12 @@ import { today } from "@/lib/dates";
 interface Props {
   onClose: () => void;
   defaultDate?: string;
+  defaultClientId?: number;
 }
 
-export function CreateAppointment({ onClose, defaultDate }: Props) {
+export function CreateAppointment({ onClose, defaultDate, defaultClientId }: Props) {
   const { addAppointment, clientLookup, staffLookup, services, setError } = useApp();
-  const [clientId, setClientId] = useState("");
+  const [clientId, setClientId] = useState(defaultClientId ? String(defaultClientId) : "");
   const [staffId, setStaffId] = useState("");
   const [date, setDate] = useState(defaultDate || today());
   const [startTime, setStartTime] = useState("09:00");

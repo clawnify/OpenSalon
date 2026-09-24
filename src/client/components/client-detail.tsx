@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
 import { useApp } from "../context";
-import { ArrowLeft, Trash2, Save, Mail, Phone } from "lucide-preact";
+import { ArrowLeft, Trash2, Save, Mail, Phone, Plus } from "lucide-preact";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "./status-badge";
+import { CreateAppointment } from "./create-appointment";
 
 export function ClientDetail() {
   const { selectedClient: client, selectedClientAppointments: appointments, navigate, updateClient, deleteClient } = useApp();
@@ -16,6 +17,7 @@ export function ClientDetail() {
   const [email, setEmail] = useState(client?.email || "");
   const [phone, setPhone] = useState(client?.phone || "");
   const [notes, setNotes] = useState(client?.notes || "");
+  const [showCreate, setShowCreate] = useState(false);
 
   if (!client) return null;
 
@@ -26,15 +28,27 @@ export function ClientDetail() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate("/clients")}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Button>
-        <h1 className="flex-1 text-2xl font-bold">{client.name}</h1>
-        <Button variant="destructive" size="sm" onClick={() => deleteClient(client.id)}>
-          <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
-        </Button>
+        <h1 className="min-w-0 flex-1 text-2xl font-bold">{client.name}</h1>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Button size="sm" className="flex-1 sm:flex-none" onClick={() => setShowCreate(true)}>
+            <Plus className="mr-1 h-3.5 w-3.5" /> Book appointment
+          </Button>
+          <Button variant="destructive" size="sm" className="flex-1 sm:flex-none" onClick={() => deleteClient(client.id)}>
+            <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+          </Button>
+        </div>
       </div>
+
+      {showCreate && (
+        <CreateAppointment
+          defaultClientId={client.id}
+          onClose={() => setShowCreate(false)}
+        />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">

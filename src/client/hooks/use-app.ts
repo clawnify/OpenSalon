@@ -153,8 +153,17 @@ export function useAppState(isAgent: boolean, navigate: (to: string) => void): A
   }) => {
     await api("POST", "/api/appointments", data);
     await fetchAppointments(appointmentsPag, appointmentsSearch, appointmentsStatusFilter);
-    await Promise.all([fetchStats(), fetchCalendar(calendarDate)]);
-  }, [appointmentsPag, appointmentsSearch, appointmentsStatusFilter, calendarDate, fetchAppointments, fetchStats, fetchCalendar]);
+    await Promise.all([
+      fetchStats(),
+      fetchCalendar(calendarDate),
+      ...(selectedClient?.id === data.client_id
+        ? [api<{ client: Client; appointments: Appointment[] }>("GET", `/api/clients/${data.client_id}`).then((res) => {
+            setSelectedClient(res.client);
+            setSelectedClientAppointments(res.appointments);
+          })]
+        : []),
+    ]);
+  }, [appointmentsPag, appointmentsSearch, appointmentsStatusFilter, selectedClient, calendarDate, fetchAppointments, fetchStats, fetchCalendar]);
 
   const updateAppointment = useCallback(async (id: number, data: Partial<Appointment> & { allow_conflict?: boolean }) => {
     await api("PUT", `/api/appointments/${id}`, data);
