@@ -1004,20 +1004,35 @@ const createBlockedSlot = createRoute({
       start_time: z.string(),
       end_time: z.string(),
       reason: z.string().optional(),
+      allow_conflict: z.boolean().optional().openapi({
+        description: "Block the time even though it overlaps an appointment or another blocked slot.",
+      }),
     }) } } },
   },
   responses: {
     201: { description: "Created", content: { "application/json": { schema: OkSchema } } },
     400: { description: "Invalid times", content: { "application/json": { schema: ErrorSchema } } },
+    409: { description: "Staff member already has an appointment or blocked time", content: { "application/json": { schema: ConflictSchema } } },
   },
 });
 
 app.openapi(createBlockedSlot, async (c) => {
-  const body = c.req.valid("json");
+  const { allow_conflict, ...body } = c.req.valid("json");
   const start = toMinutes(body.start_time);
   const end = toMinutes(body.end_time);
   if (start === null || end === null) return c.json({ error: "Times must be HH:MM" }, 400);
   if (end <= start) return c.json({ error: "Blocked time must end after it starts on the same day" }, 400);
+
+  if (!allow_conflict) {
+    const conflicts = findConflicts(
+      body.start_time,
+      body.end_time,
+      await busyFor(body.staff_id, body.blocked_date),
+    );
+    if (conflicts.length > 0) {
+      return c.json({ error: describeConflicts(await staffName(body.staff_id), conflicts, "block"), conflicts }, 409);
+    }
+  }
 
   await run(
     "INSERT INTO blocked_slots (staff_id, blocked_date, start_time, end_time, reason) VALUES (?, ?, ?, ?, ?)",

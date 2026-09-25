@@ -204,7 +204,7 @@ export function useAppState(isAgent: boolean, navigate: (to: string) => void): A
 
   // ── Calendar / Blocked Slots ──
 
-  const addBlockedSlot = useCallback(async (data: { staff_id: number; blocked_date: string; start_time: string; end_time: string; reason?: string }) => {
+  const addBlockedSlot = useCallback(async (data: { staff_id: number; blocked_date: string; start_time: string; end_time: string; reason?: string; allow_conflict?: boolean }) => {
     await api("POST", "/api/blocked-slots", data);
     await fetchCalendar(calendarDate);
   }, [calendarDate, fetchCalendar]);

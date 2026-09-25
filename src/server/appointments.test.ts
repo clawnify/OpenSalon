@@ -124,6 +124,36 @@ test("blocked time must be a valid forward interval", async (t) => {
   assert.ok(schema.body.paths["/api/blocked-slots"].post.responses[400]);
 });
 
+test("blocked time reports every clash and requires an explicit override", async (t) => {
+  const { call, create, db } = await setup(t);
+  await create({ start_time: "12:30" });
+  db.prepare("INSERT INTO blocked_slots (staff_id, blocked_date, start_time, end_time, reason) VALUES (1, '2026-09-14', '12:00', '12:15', 'Break')").run();
+  const block = (patch: object = {}) => call("POST", "/api/blocked-slots", {
+    staff_id: 1, blocked_date: "2026-09-14", start_time: "12:00", end_time: "13:00", reason: "Closure", ...patch,
+  });
+
+  const rejected = await block();
+  assert.equal(rejected.status, 409);
+  assert.deepEqual(rejected.body.conflicts.map((conflict: { kind: string }) => conflict.kind), ["appointment", "blocked"]);
+  assert.match(rejected.body.error, /allow_conflict: true to block over it anyway/);
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM blocked_slots").get()?.count, 1);
+
+  assert.equal((await block({ allow_conflict: true })).status, 201);
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM blocked_slots").get()?.count, 2);
+
+  const schema = await call("GET", "/api/openapi.json");
+  assert.ok(schema.body.paths["/api/blocked-slots"].post.responses[409]);
+});
+
+test("blocked time may sit directly beside an appointment", async (t) => {
+  const { call, create } = await setup(t);
+  await create({ start_time: "12:00" });
+  const adjacent = await call("POST", "/api/blocked-slots", {
+    staff_id: 1, blocked_date: "2026-09-14", start_time: "11:00", end_time: "12:00", reason: "Break",
+  });
+  assert.equal(adjacent.status, 201);
+});
+
 test("rescheduling across dates keeps booking history and moves the calendar entry", async (t) => {
   const { create, update, call, db } = await setup(t);
   const created = await create({ service_ids: [1, 2], notes: "Keep the colour formula" });

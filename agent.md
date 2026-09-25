@@ -15,7 +15,7 @@ Translate the user's request into salon operations, but let OpenSalon own IDs, p
 7. For a reschedule or status change, use `PUT /api/appointments/{id}`. The app preserves duration when only `start_time` changes and rechecks availability when a booking moves or is restored.
 8. Add timestamped operational history with `POST /api/appointments/{id}/notes`; use the appointment's `notes` field for editable booking instructions.
 
-For staff time off or breaks, use `POST /api/blocked-slots` after checking the calendar. For stock work, read `/api/products` first, then create or update only the product the user named.
+For staff time off or breaks, use `POST /api/blocked-slots` after checking the calendar. If it returns `409`, name every appointment or block in the way and ask whether to choose another interval or create the closure anyway. Send `allow_conflict: true` only after the user deliberately accepts that overlap. For stock work, read `/api/products` first, then create or update only the product the user named.
 
 ## Pages
 
