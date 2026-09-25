@@ -43,7 +43,7 @@ export interface AppContextValue {
   calendarBlocked: BlockedSlot[];
   calendarDate: string;
   setCalendarDate: (date: string) => void;
-  addBlockedSlot: (data: { staff_id: number; blocked_date: string; start_time: string; end_time: string; reason?: string }) => Promise<void>;
+  addBlockedSlot: (data: { staff_id: number; blocked_date: string; start_time: string; end_time: string; reason?: string; allow_conflict?: boolean }) => Promise<void>;
   deleteBlockedSlot: (id: number) => Promise<void>;
 
   // Clients

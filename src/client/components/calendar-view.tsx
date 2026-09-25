@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 import { useApp } from "../context";
 import type { Appointment, BlockedSlot } from "../types";
-import { ChevronLeft, ChevronRight, Plus, X, Ban } from "lucide-preact";
+import { ChevronLeft, ChevronRight, Plus, X, Ban, TriangleAlert } from "lucide-preact";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { CreateAppointment } from "./create-appointment";
 import { cn } from "@/lib/utils";
 import { packLanes } from "@/lib/overlap";
 import { parseDate, shiftDate, today } from "@/lib/dates";
+import { conflictsFrom, describeConflict, type Conflict } from "@/lib/conflicts";
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7 AM to 8 PM
 
@@ -67,11 +68,16 @@ export function CalendarView() {
   const [blockStart, setBlockStart] = useState("12:00");
   const [blockEnd, setBlockEnd] = useState("13:00");
   const [blockReason, setBlockReason] = useState("");
+  const [blockConflicts, setBlockConflicts] = useState<Conflict[] | null>(null);
 
   const dateObj = parseDate(calendarDate);
   const todayStr = today();
 
-  const shiftDay = (delta: number) => setCalendarDate(shiftDate(calendarDate, delta));
+  const chooseDate = (date: string) => {
+    setCalendarDate(date);
+    setBlockConflicts(null);
+  };
+  const shiftDay = (delta: number) => chooseDate(shiftDate(calendarDate, delta));
 
   const dayStart = HOURS[0] * 60;
   const dayEnd = (HOURS[HOURS.length - 1] + 1) * 60;
@@ -79,8 +85,9 @@ export function CalendarView() {
   const hourHeight = 64;
   const totalHeight = (totalMinutes / 60) * hourHeight;
 
-  const handleAddBlock = async () => {
+  const handleAddBlock = async (allowConflict = false) => {
     if (!blockStaff) return;
+    setBlockConflicts(null);
     try {
       await addBlockedSlot({
         staff_id: parseInt(blockStaff),
@@ -88,21 +95,26 @@ export function CalendarView() {
         start_time: blockStart,
         end_time: blockEnd,
         reason: blockReason,
+        ...(allowConflict ? { allow_conflict: true } : {}),
       });
       setError(null);
       setShowBlockForm(false);
       setBlockReason("");
     } catch (err) {
-      setError((err as Error).message);
+      const clashes = conflictsFrom(err);
+      if (clashes) setBlockConflicts(clashes);
+      else setError((err as Error).message);
     }
   };
+
+  const clearBlockConflicts = () => setBlockConflicts(null);
 
   return (
     <div className="flex h-full min-w-0 flex-col gap-4 p-4 sm:p-6">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex w-full items-center justify-between gap-3 sm:w-auto">
           <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
-          <Button variant="outline" size="sm" className="h-11" onClick={() => setCalendarDate(todayStr)}>Today</Button>
+          <Button variant="outline" size="sm" className="h-11" onClick={() => chooseDate(todayStr)}>Today</Button>
         </div>
         <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
           <Button variant="outline" size="icon" className="h-11 w-11 shrink-0" aria-label="Previous day" onClick={() => shiftDay(-1)}>
@@ -116,7 +128,7 @@ export function CalendarView() {
           </Button>
         </div>
         <div className="flex w-full gap-2 sm:w-auto">
-          <Button variant="outline" size="sm" className="h-11 flex-1 sm:flex-none" aria-expanded={showBlockForm} aria-controls="calendar-block-time" onClick={() => setShowBlockForm(!showBlockForm)}>
+          <Button variant="outline" size="sm" className="h-11 flex-1 sm:flex-none" aria-expanded={showBlockForm} aria-controls="calendar-block-time" onClick={() => { setShowBlockForm(!showBlockForm); setBlockConflicts(null); }}>
             <Ban className="h-3.5 w-3.5" /> Block Time
           </Button>
           <Button size="sm" className="h-11 flex-1 sm:flex-none" onClick={() => setShowCreate(true)}>
@@ -130,24 +142,37 @@ export function CalendarView() {
           <CardContent className="grid grid-cols-2 items-end gap-3 p-4 sm:grid-cols-4 xl:flex xl:flex-wrap">
             <div className="col-span-2 min-w-0 space-y-1 xl:w-48">
               <Label htmlFor="block-staff" className="text-xs">Staff</Label>
-              <select id="block-staff" className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" value={blockStaff} onChange={(e) => setBlockStaff((e.target as HTMLSelectElement).value)}>
+              <select id="block-staff" className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" value={blockStaff} onChange={(e) => { setBlockStaff((e.target as HTMLSelectElement).value); clearBlockConflicts(); }}>
                 <option value="">Select staff...</option>
                 {staffLookup.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             <div className="min-w-0 space-y-1 xl:w-28">
               <Label htmlFor="block-start" className="text-xs">Start</Label>
-              <Input id="block-start" type="time" className="h-11 w-full min-w-0" value={blockStart} onChange={(e) => setBlockStart((e.target as HTMLInputElement).value)} />
+              <Input id="block-start" type="time" className="h-11 w-full min-w-0" value={blockStart} onChange={(e) => { setBlockStart((e.target as HTMLInputElement).value); clearBlockConflicts(); }} />
             </div>
             <div className="min-w-0 space-y-1 xl:w-28">
               <Label htmlFor="block-end" className="text-xs">End</Label>
-              <Input id="block-end" type="time" className="h-11 w-full min-w-0" value={blockEnd} onChange={(e) => setBlockEnd((e.target as HTMLInputElement).value)} />
+              <Input id="block-end" type="time" className="h-11 w-full min-w-0" value={blockEnd} onChange={(e) => { setBlockEnd((e.target as HTMLInputElement).value); clearBlockConflicts(); }} />
             </div>
             <div className="col-span-2 min-w-0 space-y-1 xl:flex-1">
               <Label htmlFor="block-reason" className="text-xs">Reason</Label>
               <Input id="block-reason" className="h-11" placeholder="e.g. Lunch break" value={blockReason} onChange={(e) => setBlockReason((e.target as HTMLInputElement).value)} />
             </div>
-            <Button size="sm" className="col-span-2 h-11" onClick={handleAddBlock}>Add Block</Button>
+            {blockConflicts && (
+              <div role="alert" className="col-span-2 flex min-w-0 gap-2.5 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm sm:col-span-4 xl:basis-full">
+                <TriangleAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" aria-hidden="true" />
+                <div className="min-w-0 space-y-1">
+                  <p className="font-medium">{staffLookup.find((s) => String(s.id) === blockStaff)?.name ?? "That staff member"} is not free then.</p>
+                  <ul className="text-muted-foreground">
+                    {blockConflicts.map((conflict, index) => <li key={index}>{describeConflict(conflict)}</li>)}
+                  </ul>
+                  <p className="text-muted-foreground">Choose another time or staff member, or block it anyway.</p>
+                </div>
+              </div>
+            )}
+            {blockConflicts && <Button type="button" variant="outline" size="sm" className="col-span-2 h-11 sm:col-span-1" onClick={() => handleAddBlock(true)}>Block anyway</Button>}
+            <Button size="sm" className="col-span-2 h-11 sm:col-span-1" onClick={() => handleAddBlock()}>Add Block</Button>
           </CardContent>
         </Card>
       )}

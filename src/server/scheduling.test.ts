@@ -76,6 +76,11 @@ test("the message tells the caller what is in the way and how to proceed", () =>
   assert.match(msg, /allow_conflict/);
 });
 
+test("the message names the explicit override action for blocked time", () => {
+  const msg = describeConflicts("Alex", [appt("10:00", "11:00", "Jamie Rivera")], "block");
+  assert.match(msg, /allow_conflict: true to block over it anyway/);
+});
+
 test("time blocked off reads as unavailable rather than booked", () => {
   assert.match(describeConflicts("Alex", [block("13:00", "14:00", "Lunch")]), /unavailable at 13:00-14:00 \(Lunch\)/);
   // Mixed causes fall back to the stronger word.
