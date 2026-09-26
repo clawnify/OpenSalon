@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 import { useApp } from "../context";
 import type { Appointment, BlockedSlot } from "../types";
-import { ChevronLeft, ChevronRight, Plus, X, Ban, TriangleAlert } from "lucide-preact";
+import { ChevronLeft, ChevronRight, Plus, X, Ban, TriangleAlert, Download } from "lucide-preact";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { packLanes } from "@/lib/overlap";
 import { parseDate, shiftDate, today } from "@/lib/dates";
 import { conflictsFrom, describeConflict, type Conflict } from "@/lib/conflicts";
+import { downloadDaySheet } from "@/lib/day-sheet";
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7 AM to 8 PM
 
@@ -127,11 +128,14 @@ export function CalendarView() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex w-full gap-2 sm:w-auto">
-          <Button variant="outline" size="sm" className="h-11 flex-1 sm:flex-none" aria-expanded={showBlockForm} aria-controls="calendar-block-time" onClick={() => { setShowBlockForm(!showBlockForm); setBlockConflicts(null); }}>
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+          <Button variant="outline" size="sm" className="h-11 w-full sm:w-auto" aria-expanded={showBlockForm} aria-controls="calendar-block-time" onClick={() => { setShowBlockForm(!showBlockForm); setBlockConflicts(null); }}>
             <Ban className="h-3.5 w-3.5" /> Block Time
           </Button>
-          <Button size="sm" className="h-11 flex-1 sm:flex-none" onClick={() => setShowCreate(true)}>
+          <Button variant="outline" size="sm" className="h-11 w-full sm:w-auto" onClick={() => downloadDaySheet(calendarDate, calendarAppointments, calendarBlocked)}>
+            <Download className="h-3.5 w-3.5" /> Day Sheet
+          </Button>
+          <Button size="sm" className="col-span-2 h-11 w-full sm:w-auto" onClick={() => setShowCreate(true)}>
             <Plus className="h-3.5 w-3.5" /> New Booking
           </Button>
         </div>
