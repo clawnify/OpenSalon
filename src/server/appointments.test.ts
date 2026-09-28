@@ -198,6 +198,28 @@ test("client history summarizes services and the latest service note", async (t)
   assert.equal(blankVisit.latest_note, null);
 });
 
+test("staff totals separate completed booked value from every other appointment", async (t) => {
+  const { create, update, call } = await setup(t);
+  const completed = await create();
+  await update(completed.body.appointment.id, { status: "completed", total_price: 72.5 });
+
+  const cancelled = await create({ start_time: "11:00" });
+  await update(cancelled.body.appointment.id, { status: "cancelled", total_price: 100 });
+  await create({ staff_id: 2, start_time: "12:00", total_price: 55 });
+
+  const response = await call("GET", "/api/staff");
+  assert.equal(response.status, 200);
+  const first = response.body.staff.find((staff: { id: number }) => staff.id === 1);
+  assert.equal(first.appointment_count, 2);
+  assert.equal(first.completed_appointment_count, 1);
+  assert.equal(first.completed_service_value, 72.5);
+
+  const second = response.body.staff.find((staff: { id: number }) => staff.id === 2);
+  assert.equal(second.appointment_count, 1);
+  assert.equal(second.completed_appointment_count, 0);
+  assert.equal(second.completed_service_value, 0);
+});
+
 test("products preserve zero thresholds and can be edited without recreation", async (t) => {
   const { call, db } = await setup(t);
   const created = await call("POST", "/api/products", {

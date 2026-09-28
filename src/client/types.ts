@@ -63,6 +63,8 @@ export interface Staff {
   color: string;
   active: number;
   appointment_count?: number;
+  completed_appointment_count?: number;
+  completed_service_value?: number;
   created_at: string;
 }
 
