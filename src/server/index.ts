@@ -54,6 +54,8 @@ const StaffSchema = z.object({
   color: z.string(),
   active: z.number().int(),
   appointment_count: z.number().int().optional(),
+  completed_appointment_count: z.number().int().optional(),
+  completed_service_value: z.number().optional().describe("Sum of booked prices for completed appointments; not payments, tips, commission, or take-home pay"),
   created_at: z.string(),
 }).openapi("Staff");
 
@@ -216,7 +218,7 @@ const getStats = createRoute({
         today_appointments: z.number().int(),
         upcoming_appointments: z.number().int(),
         completed_appointments: z.number().int(),
-        revenue: z.number(),
+        revenue: z.number().describe("Completed booked service value; retained as revenue for API compatibility, not settled payment revenue"),
         low_stock_products: z.number().int(),
       }) } },
     },
@@ -233,7 +235,7 @@ app.openapi(getStats, async (c) => {
   const todayAppointments = await get<{ count: number }>("SELECT COUNT(*) as count FROM appointments WHERE scheduled_date = ?", [today]);
   const upcomingAppointments = await get<{ count: number }>("SELECT COUNT(*) as count FROM appointments WHERE status IN ('booked', 'confirmed') AND scheduled_date >= ?", [today]);
   const completedAppointments = await get<{ count: number }>("SELECT COUNT(*) as count FROM appointments WHERE status = 'completed'");
-  const revenue = await get<{ total: number }>("SELECT COALESCE(SUM(total_price), 0) as total FROM appointments WHERE status = 'completed'");
+  const completedServiceValue = await get<{ total: number }>("SELECT COALESCE(SUM(total_price), 0) as total FROM appointments WHERE status = 'completed'");
   const lowStock = await get<{ count: number }>("SELECT COUNT(*) as count FROM products WHERE stock <= low_stock_alert");
   return c.json({
     appointments: appointments?.count || 0,
@@ -244,7 +246,7 @@ app.openapi(getStats, async (c) => {
     today_appointments: todayAppointments?.count || 0,
     upcoming_appointments: upcomingAppointments?.count || 0,
     completed_appointments: completedAppointments?.count || 0,
-    revenue: revenue?.total || 0,
+    revenue: completedServiceValue?.total || 0,
     low_stock_products: lowStock?.count || 0,
   }, 200);
 });
@@ -812,8 +814,14 @@ const listStaff = createRoute({
 
 app.openapi(listStaff, async (c) => {
   const staff = await query<Record<string, unknown>>(
-    `SELECT s.*, (SELECT COUNT(*) FROM appointments WHERE staff_id = s.id) as appointment_count
-     FROM staff s ORDER BY s.name ASC`,
+    `SELECT s.*,
+            COUNT(a.id) as appointment_count,
+            COALESCE(SUM(CASE WHEN a.status = 'completed' THEN 1 ELSE 0 END), 0) as completed_appointment_count,
+            COALESCE(SUM(CASE WHEN a.status = 'completed' THEN a.total_price ELSE 0 END), 0) as completed_service_value
+     FROM staff s
+     LEFT JOIN appointments a ON a.staff_id = s.id
+     GROUP BY s.id
+     ORDER BY s.name ASC`,
   );
   return c.json({ staff }, 200);
 });

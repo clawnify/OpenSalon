@@ -17,7 +17,7 @@ export function Dashboard() {
     { label: "Today's Appointments", value: stats.today_appointments, icon: CalendarDays, color: "text-violet-600 bg-violet-50", onClick: () => navigate("/calendar") },
     { label: "Upcoming", value: stats.upcoming_appointments, icon: Clock, color: "text-blue-600 bg-blue-50", onClick: () => navigate("/appointments") },
     { label: "Clients", value: stats.clients, icon: Users, color: "text-emerald-600 bg-emerald-50", onClick: () => navigate("/clients") },
-    { label: "Revenue", value: `$${stats.revenue.toFixed(0)}`, icon: DollarSign, color: "text-amber-600 bg-amber-50" },
+    { label: "Completed service value", value: `$${stats.revenue.toFixed(0)}`, icon: DollarSign, color: "text-amber-600 bg-amber-50" },
     { label: "Products", value: stats.products, icon: Package, color: "text-rose-600 bg-rose-50", onClick: () => navigate("/products") },
   ];
 
