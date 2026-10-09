@@ -56,7 +56,7 @@ OpenSalon is **vertical-agnostic** — configure services, pricing, and staff fo
 
 ```bash
 git clone https://github.com/clawnify/OpenSalon.git
-cd open-salon
+cd OpenSalon
 pnpm install
 pnpm run dev
 ```
