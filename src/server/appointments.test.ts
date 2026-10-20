@@ -263,3 +263,19 @@ test("legacy invalid times do not prevent cancellation or metadata repair", asyn
   assert.equal((await update(id, { status: "booked" })).status, 400);
   assert.equal((await update(id, { status: "booked", end_time: "11:00" })).status, 200);
 });
+
+test("a service used by a booking is kept, an unused one can be deleted", async (t) => {
+  const { create, call, db } = await setup(t);
+  const id = (await create()).body.appointment.id;
+  const lines = () => db.prepare("SELECT COUNT(*) AS count FROM appointment_services WHERE appointment_id = ?").get(id)?.count;
+  assert.equal(lines(), 1);
+  const refused = await call("DELETE", "/api/services/1");
+  assert.equal(refused.status, 409);
+  assert.match(refused.body.error, /inactive/i);
+  assert.equal(lines(), 1);
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM services WHERE id = 1").get()?.count, 1);
+  assert.equal((await call("PUT", "/api/services/1", { active: 0 })).status, 200);
+  const unused = db.prepare("SELECT id FROM services WHERE id NOT IN (SELECT service_id FROM appointment_services) LIMIT 1").get()?.id;
+  assert.equal((await call("DELETE", `/api/services/${unused}`)).status, 200);
+  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM services WHERE id = ?").get(unused)?.count, 0);
+});
