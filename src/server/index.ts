@@ -991,11 +991,20 @@ const deleteService = createRoute({
   method: "delete",
   path: "/api/services/{id}",
   request: { params: IdParam },
-  responses: { 200: { description: "Deleted", content: { "application/json": { schema: OkSchema } } } },
+  responses: {
+    200: { description: "Deleted", content: { "application/json": { schema: OkSchema } } },
+    409: { description: "Service is used by bookings", content: { "application/json": { schema: ErrorSchema } } },
+  },
 });
 
 app.openapi(deleteService, async (c) => {
   const { id } = c.req.valid("param");
+  // appointment_services cascades on service delete, which would silently drop the
+  // service from past bookings while their total_price keeps counting it.
+  const used = await get<{ count: number }>("SELECT COUNT(*) as count FROM appointment_services WHERE service_id = ?", [id]);
+  if (used && used.count > 0) {
+    return c.json({ error: `This service is on ${used.count} booking${used.count === 1 ? "" : "s"}. Mark it inactive instead of deleting it.` }, 409);
+  }
   await run("DELETE FROM services WHERE id = ?", [id]);
   return c.json({ ok: true }, 200);
 });
