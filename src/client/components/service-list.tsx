@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreateService } from "./create-service";
 
 export function ServiceList() {
-  const { services, deleteService, updateService } = useApp();
+  const { services, deleteService, updateService, setError } = useApp();
   const [showCreate, setShowCreate] = useState(false);
 
   const categories = [...new Set(services.map((s) => s.category).filter(Boolean))];
@@ -65,7 +65,7 @@ export function ServiceList() {
                     </button>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteService(svc.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteService(svc.id).catch((err) => setError((err as Error).message))}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </TableCell>
