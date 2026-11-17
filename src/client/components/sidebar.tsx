@@ -1,5 +1,6 @@
-import { AppNav, embedded } from "@clawnify/app/client";
+import { AppNav } from "@clawnify/app/client";
 import { useEffect, useState } from "preact/hooks";
+import type { ComponentChildren } from "preact";
 import { useApp } from "../context";
 import { Scissors, Menu, LayoutDashboard, CalendarDays, Clock, Users, UserCog, Sparkles, Package } from "lucide-preact";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ const navItems: { view: View; path: string; label: string; icon: typeof LayoutDa
   { view: "products", path: "/products", label: "Products", icon: Package },
 ];
 
-function SidebarContent({ currentView, onNavigate }: { currentView: View; onNavigate?: () => void }) {
+function SidebarContent({ currentView, onNavigate, card }: { currentView: View; onNavigate?: () => void; card?: ComponentChildren }) {
   const { navigate, stats } = useApp();
 
   return (
@@ -59,6 +60,7 @@ function SidebarContent({ currentView, onNavigate }: { currentView: View; onNavi
           </button>
         ))}
       </nav>
+      {card && <div className="px-2 pb-2">{card}</div>}
       <Separator />
       <div className="flex items-center justify-around px-4 py-4">
         <div className="text-center">
@@ -90,23 +92,22 @@ export function Sidebar({ currentView }: { currentView: View }) {
     };
   }, []);
 
-  if (embedded) {
-    const icons = ["home", "calendar-days", "clock", "users", "users", "sparkles", "package"];
-    return <AppNav title="Salon" icon="calendar-days" active={currentView}
-      groups={[{ items: navItems.map((item, index) => ({
-        id: item.view, label: item.label, href: item.path, icon: icons[index],
-        home: item.view === "dashboard",
-        count: item.view === "appointments" ? stats.appointments || undefined
-          : item.view === "clients" ? stats.clients || undefined
-          : item.view === "products" ? stats.low_stock_products || undefined : undefined,
-      })) }]}
-      onNavigate={(item) => navigate(item.href || "/")} />;
-  }
-
-  return (
+  // One <AppNav>: inside Clawnify the dashboard draws this navigation, and
+  // anywhere else the salon's own sidebar below is drawn from it.
+  const icons = ["home", "calendar-days", "clock", "users", "users", "sparkles", "package"];
+  return <AppNav title="Salon" icon="calendar-days" active={currentView}
+    groups={[{ items: navItems.map((item, index) => ({
+      id: item.view, label: item.label, href: item.path, icon: icons[index],
+      home: item.view === "dashboard",
+      count: item.view === "appointments" ? stats.appointments || undefined
+        : item.view === "clients" ? stats.clients || undefined
+        : item.view === "products" ? stats.low_stock_products || undefined : undefined,
+    })) }]}
+    onNavigate={(item) => navigate(item.href || "/")}
+    standalone={(nav) => (
     <>
       <aside className="hidden w-60 shrink-0 border-r md:block">
-        <SidebarContent currentView={currentView} />
+        <SidebarContent currentView={currentView} card={nav.card} />
       </aside>
       <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-sidebar px-4 py-2 md:hidden">
         <span className="flex items-center gap-2 text-sm font-semibold">
@@ -127,5 +128,5 @@ export function Sidebar({ currentView }: { currentView: View }) {
         </Dialog>
       </header>
     </>
-  );
+    )} />;
 }
