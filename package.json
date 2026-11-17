@@ -9,7 +9,7 @@
     "test": "node --experimental-strip-types --test 'src/**/*.test.ts'"
   },
   "dependencies": {
-    "@clawnify/app": "^0.4.8",
+    "@clawnify/app": "^0.4.9",
     "@clawnify/db": "^0.4.3",
     "@hono/zod-openapi": "^0.18.0",
     "@phosphor-icons/react": "^2.1.10",
