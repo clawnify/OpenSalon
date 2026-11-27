@@ -4,13 +4,15 @@
 
 [![Deploy with Clawnify](https://app.clawnify.com/deploy-button.svg)](https://app.clawnify.com/deploy?repo=clawnify/OpenSalon)
 
-An appointment booking and business management app for salons, spas, barbershops, tattoo studios, and any appointment-based business. Part of the [OpenClaw](https://github.com/openclaw/openclaw) ecosystem. Zero cloud dependencies — runs locally with SQLite.
+An appointment booking and business management app for salons, spas, barbershops, tattoo studios, and any appointment-based business. Zero cloud dependencies — runs locally with SQLite.
+
+The app is open source. Deploy it to Clawnify to use it from ChatGPT, Claude, or other MCP-compatible AI chats through the Clawnify connector.
 
 Built with **Preact + Tailwind CSS v4 + shadcn/ui + Hono + SQLite**. Ships with a day calendar with staff columns, appointment scheduling, client database, service catalog, product inventory, and blocked time slots.
 
 ## What Is It?
 
-OpenSalon is a production-ready appointment scheduling platform designed for the OpenClaw community. Think of it as an open-source alternative to **Salonist**, **Fresha**, **Square Appointments**, **Vagaro**, or **Booksy** — a complete booking and staff management system you can self-host, customize, and embed in any SaaS product.
+OpenSalon is a production-ready appointment scheduling platform. Think of it as an open-source alternative to **Salonist**, **Fresha**, **Square Appointments**, **Vagaro**, or **Booksy** — a complete booking and staff management system you can self-host, customize, and embed in any SaaS product.
 
 Unlike Salonist or Fresha, this runs entirely on your own infrastructure. No per-user fees, no booking commissions, no vendor lock-in. Manage your entire appointment-based operation from scheduling to inventory.
 
@@ -63,7 +65,7 @@ pnpm run dev
 
 Open `http://localhost:5174` in your browser. Data persists in `data.db`.
 
-### Agent Mode (for OpenClaw / Claude Code)
+### Agent Mode (for coding assistants)
 
 Append `?agent` to the URL:
 
@@ -209,7 +211,7 @@ Open-source salon management software, free appointment booking software, open-s
 
 ## Community & Contributions
 
-This project is part of the [OpenClaw](https://github.com/openclaw/openclaw) ecosystem. Contributions are welcome — open an issue or submit a PR.
+Contributions are welcome — open an issue or submit a PR.
 
 ## License
 
